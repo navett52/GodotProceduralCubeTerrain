@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://MarchingCubes.gd" type="Script" id=1]
+[ext_resource path="res://assets/maujoe.camera_control/scripts/camera_control.gd" type="Script" id=2]
 
 [node name="Spatial" type="Spatial"]
 script = ExtResource( 1 )
@@ -9,5 +10,5 @@ script = ExtResource( 1 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.75186, 0 )
 omni_range = 11.336
 
-[node name="Camera2" type="Camera" parent="."]
-transform = Transform( -0.707107, -0.298836, 0.640856, 0, 0.906308, 0.422618, -0.707107, 0.298836, -0.640857, 9.94563, 7.1699, -10.0544 )
+[node name="Camera" type="Camera" parent="."]
+script = ExtResource( 2 )
