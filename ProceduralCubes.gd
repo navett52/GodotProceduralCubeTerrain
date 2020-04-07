@@ -20,7 +20,7 @@ var terrain = {}
 
 # The value to multiple the noise value by.
 # Currently not being used but could easily be swapped in.
-var GRID_SCALE = 100
+var GRID_SCALE = 10
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -52,7 +52,7 @@ func _ready():
 			for z in range(100):
 				zOffset = offset * z
 				print(noise.get_noise_2d(x, z))
-				makeCube(xOffset, floor(noise.get_noise_2d(x, z) * 10), zOffset)
+				makeCube(xOffset, floor(noise.get_noise_2d(x, z) * GRID_SCALE), zOffset)
 
 # Make a cube and specify offsets to move the cubes around.
 func makeCube(offsetX, offsetY, offsetZ):
