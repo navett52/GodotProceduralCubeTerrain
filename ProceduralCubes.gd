@@ -1,58 +1,58 @@
 extends Spatial
 
-# Gotta keep track of those verticies and indicies.
+#=== Constants ===#
+const CUBE_SIZE = .5 # -> How big our cubes should be. 
+const HEIGHT_SCALE = 10 # -> How much we amplify our noise.
+const BASE_HEIGHT = 0 # -> The base height the world starts generating at.
+const DEPTH_LIMIT = 5
+#=== Constants ===#
+
+#=== Noise Variables ===#
+# OpenSimplex noise instance.
+var noise = OpenSimplexNoise.new()
+
+# This is the noise seed. I have it hardcoded for debugging.
+export var genSeed = 10
+
+# These are the noise variable sto tweak to get different terrain effects.
+export var genOctaves = 4
+export var genPeriod = 50
+export var genPersistence = 0.8
+export var genLacunarity = 2
+
+#=== Cube related variables ===#
+# Keeping track of our verticies and indicies for, currently, a single cube.
 var arrayQuadVerticies = []
 var arrayQuadIndicies = []
 
 # A dictionary to check against to make sure we don't create duplicate verticies in a cube.
 # Could probably be expanded upon to be used on a larger mesh.
 var dictionaryCheckQuadVerticies = {}
-
-# How big we want our cubes.
-const CUBE_SIZE = 1
-
-# OpenSimplex noise instance.
-var noise = OpenSimplexNoise.new()
-
-# A dictionary to store pregenerated Y values from noise.
-# Apart of the nested loop code that isn't currently being used.
-var terrain = {}
-
-# The value to multiple the noise value by.
-# Currently not being used but could easily be swapped in.
-var GRID_SCALE = 10
+#=== Cube related variables ===#
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	# This is the noise seed. I have it hardcoded for debugging.
-	noise.seed = 10
+	noise.seed = genSeed
 	
 	# These are the noise variable sto tweak to get different terrain effects.
-	noise.octaves = 4
-	noise.period = 50
-	noise.persistence = 0.8
-	# noise.lacunarity = .5
+	noise.octaves = genOctaves
+	noise.period = genPeriod
+	noise.persistence = genPersistence
+	noise.lacunarity = genLacunarity
 	
-	# Pre-creating a list of height values from the noise. I'm not actually using this right now.
-#	for x in range(10):
-#		for y in range(10):
-#			if terrain.has((str(x) + ',' + str(y))) == false:
-#				terrain[(str(x) + ',' + str(y))] = noise.get_noise_2d(x, y) * GRID_SCALE
-	
-	# Create a 100x100 grid of cubes and set the Y offset to the noise value multiplied by 10 since it returns between -1 and 1.
-	var offset = 2
+	var offset = 1
 	var xOffset
 	var yOffset
 	var zOffset
 	
-	for x in range(100):
+	for x in range(10):
 		xOffset = offset * x
-		for y in range(1):
+		for y in range(10):
 			yOffset = offset * y
-			for z in range(100):
+			for z in range(10):
 				zOffset = offset * z
-				print(noise.get_noise_2d(x, z))
-				makeCube(xOffset, floor(noise.get_noise_2d(x, z) * GRID_SCALE), zOffset)
+				makeCube(xOffset, BASE_HEIGHT + (yOffset * -1) + (floor(noise.get_noise_2d(x, z) * HEIGHT_SCALE)), zOffset)
 
 # Make a cube and specify offsets to move the cubes around.
 func makeCube(offsetX, offsetY, offsetZ):
