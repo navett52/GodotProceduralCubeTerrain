@@ -32,6 +32,18 @@ var dictionaryCheckQuadVerticies = {}
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	for tile in WorldGenerationGlobals.Tile:
+		print(tile)
+	
+	for tile in WorldGenerationGlobals.tiles:
+		print(tile)
+	
+	for blockType in WorldGenerationGlobals.BlockType:
+		print(blockType)
+	
+	for block in WorldGenerationGlobals.blocks:
+		print(block)
+	
 	# This is the noise seed. I have it hardcoded for debugging.
 	noise.seed = genSeed
 	
