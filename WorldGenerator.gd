@@ -3,9 +3,12 @@ extends Node
 # Need a chunk
 var ChunkClass = load("res://Chunk.gd")
 var terrainChunk # mayhaps this should really be the MeshInstance object. We'll see.
+var thread
+var lock = Mutex.new()
+signal finished
 
 # Get the player; In this case a camera node
-var player
+var player = Camera
 var world
 
 # Make a dictionary to hold chunks
@@ -13,6 +16,7 @@ var chunks = {}
 
 # Noise
 var noise = OpenSimplexNoise.new()
+const genSeed = 10
 
 # Distance chunks load from player
 export var chunkDistance = 5
@@ -26,10 +30,74 @@ var chunksToGen = []
 func _ready():
 	world = get_node(".")
 	player = get_node("Camera")
+	noise.seed = genSeed
+	thread = Thread.new()
+	self.connect("finished", self, "wait")
 	loadChunks(true)
 
 func _process(delta):
 	loadChunks()
+
+func wait():
+	print("Waiting for thread.")
+	thread.wait_to_finish()
+
+var currentChunk = Vector2(-1 ,-1)
+func loadChunks(immediate = false):
+	# Get the chunk the player is currently in
+	var currentChunkPosX = floor(player.global_transform.origin.x)
+	var currentChunkPosZ = floor(player.global_transform.origin.z)
+	
+	# Player entered a new chunk
+	# I'm using y here instead of z since I'm using a Vector2 instead of making my own class for chunk position
+	if currentChunk.x != currentChunkPosX || currentChunk.y != currentChunkPosZ:
+		currentChunk.x = currentChunkPosX
+		currentChunk.y = currentChunkPosZ
+		
+		var i = currentChunkPosX - (WorldGenerationGlobals.CHUNK_WIDTH * chunkDistance)
+		var iComp = currentChunkPosX + (WorldGenerationGlobals.CHUNK_WIDTH * chunkDistance)
+		
+		while i <= iComp:
+			var j = currentChunkPosZ - (WorldGenerationGlobals.CHUNK_WIDTH * chunkDistance)
+			var jComp = currentChunkPosZ + (WorldGenerationGlobals.CHUNK_WIDTH * chunkDistance)
+			while j <= jComp:
+				var cp = Vector2(i, j)
+				
+				if !(chunks.has(cp)) && !(chunksToGen.has(cp)):
+					if immediate:
+						buildChunk(i, j)
+					else:
+						chunksToGen.append(cp)
+				
+				j += WorldGenerationGlobals.CHUNK_WIDTH
+			i += WorldGenerationGlobals.CHUNK_WIDTH
+		
+		var chunksToDestroy = []
+		
+		# Remove chunks that are too far away.
+		for chunkPos in chunks:
+			if (abs(currentChunkPosX - chunkPos.x) > WorldGenerationGlobals.CHUNK_WIDTH * (chunkDistance + 3)) || (abs(currentChunkPosZ - chunkPos.y) > WorldGenerationGlobals.CHUNK_WIDTH * (chunkDistance + 3)):
+				chunksToDestroy.append(chunkPos)
+		
+		# Remove any up for regeneration
+		for chunkPos in chunksToGen:
+			if (abs(currentChunkPosX - chunkPos.x) > WorldGenerationGlobals.CHUNK_WIDTH * (chunkDistance + 1)) || (abs(currentChunkPosZ - chunkPos.y) > WorldGenerationGlobals.CHUNK_WIDTH * (chunkDistance + 1)):
+				chunksToGen.erase(chunkPos)
+		
+		for chunkPos in chunksToDestroy:
+			world.remove_child(chunks[chunkPos])
+			pooledChunks.append(chunks[chunkPos])
+			chunks.erase(chunkPos)
+		
+		# Trying to handle logic here so no thread has to handle more than a certain number of chunks
+		if (chunksToGen.size() > 10):
+			var tempChunksToGen = []
+			for i in range(0, chunksToGen.size() - 1):
+				tempChunksToGen.append(chunksToGen.pop_front())
+				if tempChunksToGen.size() == 10:
+					thread.start(self, "delayBuildChunks", tempChunksToGen)
+					tempChunksToGen.clear()
+			chunksToGen.clear()
 
 func buildChunk(posX, posZ):
 	var chunk = ChunkClass.new()
@@ -38,9 +106,10 @@ func buildChunk(posX, posZ):
 		chunk = pooledChunks[0]
 		world.add_child(chunk)
 		pooledChunks.erase(chunk)
-		chunk.global_transform = Vector3(posX, 0, posZ)
+		chunk.global_transform.origin = Vector3(posX, 0, posZ)
 	else:
-		chunk.global_transform = Vector3(posX, 0, posZ)
+		world.add_child(chunk)
+		chunk.global_transform.origin = Vector3(posX, 0, posZ)
 	
 	# I believe this is looping through the chunk
 	for x in range(WorldGenerationGlobals.CHUNK_WIDTH + 2):
@@ -51,10 +120,29 @@ func buildChunk(posX, posZ):
 	# TODO: Generate trees eventually
 	
 	chunk.buildMesh()
+	chunks[Vector2(posX, posZ)] = chunk
 
 func getBlockType(x, y, z):
+	var surfacePass1 = noise.get_noise_2d(x, z) * 10
+	# var surfacePass2 = noise.get_noise_2d(x, z) * 10 * (noise.get_noise_2d(x, z) + .5)
 	
-	pass
+	var surfaceMap = surfacePass1 # + surfacePass2
+	var surfaceHeight = (WorldGenerationGlobals.CHUNK_HEIGHT * .5) + surfaceMap
+	
+	# Add more noise down here eventually for caves, cave masks, stone level, etc.
+	
+	var block = WorldGenerationGlobals.BlockType.AIR
+	if y <= surfaceHeight:
+		block = WorldGenerationGlobals.BlockType.DIRT
+	
+	# Would also use this loop for the cave gen but using certain noises as a mask
+	
+	return block
 
-func loadChunks(immediate = false):
-	pass
+func delayBuildChunks(chunks):
+	print("Running delayBuildChunks with " + str(chunks.size()) + " chunks.")
+	print(chunks[0])
+	while chunks.size() > 0:
+		buildChunk(chunks[0].x, chunks[0].y)
+		chunks.remove(0)
+	emit_signal("finished")

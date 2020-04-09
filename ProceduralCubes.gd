@@ -58,11 +58,11 @@ func _ready():
 	var yOffset
 	var zOffset
 	
-	for x in range(10):
+	for x in range(50):
 		xOffset = offset * x
-		for y in range(10):
+		for y in range(1):
 			yOffset = offset * y
-			for z in range(10):
+			for z in range(50):
 				zOffset = offset * z
 				makeCube(xOffset, BASE_HEIGHT + (yOffset * -1) + (floor(noise.get_noise_2d(x, z) * HEIGHT_SCALE)), zOffset)
 

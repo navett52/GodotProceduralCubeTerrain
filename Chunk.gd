@@ -27,13 +27,13 @@ func buildMesh():
 	var tris = []
 	var uvs = []
 	
-	for x in range(chunkWidth + 1):
-		for z in range(chunkWidth + 1):
-			for y in range(chunkHeight):
+	for x in range(1, chunkWidth + 1):
+		for z in range(1, chunkWidth + 1):
+			for y in range(1, chunkHeight):
 				if blocks[_blocksKey(x, y, z)] != WorldGenerationGlobals.BlockType.AIR:
 					var blockPos = Vector3(x - 1, y, z - 1)
 					var numFaces = 0
-					
+
 					# Create the top face if there is air above the block.
 					if y < chunkHeight - 1 && blocks[_blocksKey(x, y + 1, z)] == WorldGenerationGlobals.BlockType.AIR:
 						var pos1 = blockPos + Vector3(0, 1, 0)
@@ -42,22 +42,22 @@ func buildMesh():
 						var pos4 = blockPos + Vector3(1, 1, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].topPos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].topPos.getUvs():
 							uvs.append(uv)
-					
+
 					# Bottom of a cube if it's next to an air block
 					if y > 0 && blocks[_blocksKey(x, y - 1, z)] == WorldGenerationGlobals.BlockType.AIR:
 						var pos1 = blockPos + Vector3(0, 0, 0)
-						var pos2 = blockPos + Vector3(1, 0, 0)
+						var pos2 = blockPos + Vector3(0, 0, 1)
 						var pos3 = blockPos + Vector3(1, 0, 1)
-						var pos4 = blockPos + Vector3(0, 0, 1)
+						var pos4 = blockPos + Vector3(1, 0, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].bottomPos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].bottomPos.getUvs():
 							uvs.append(uv)
-					
+
 					# Front of the cube
 					if blocks[_blocksKey(x, y, z - 1)] == WorldGenerationGlobals.BlockType.AIR:
 						var pos1 = blockPos + Vector3(0, 0, 0)
@@ -66,10 +66,10 @@ func buildMesh():
 						var pos4 = blockPos + Vector3(1, 0, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].sidePos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].sidePos.getUvs():
 							uvs.append(uv)
-					
+
 					# Right side of the cube
 					if blocks[_blocksKey(x + 1, y, z)] == WorldGenerationGlobals.BlockType.AIR:
 						var pos1 = blockPos + Vector3(1, 0, 0)
@@ -78,22 +78,26 @@ func buildMesh():
 						var pos4 = blockPos + Vector3(1, 0, 1)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].sidePos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].sidePos.getUvs():
 							uvs.append(uv)
-					
+
 					# Back of the cube
 					if blocks[_blocksKey(x, y, z + 1)] == WorldGenerationGlobals.BlockType.AIR:
-						var pos1 = blockPos + Vector3(1, 0, 1)
-						var pos2 = blockPos + Vector3(1, 1, 1)
-						var pos3 = blockPos + Vector3(0, 1, 1)
-						var pos4 = blockPos + Vector3(0, 0, 1)
+						# A needs to be 0, 0, 1
+						# B needs to be 0, 1, 1
+						# C needs to be 1, 1, 1
+						# D needs to be 1, 0, 1
+						var pos1 = blockPos + Vector3(0, 0, 1)
+						var pos2 = blockPos + Vector3(0, 1, 1)
+						var pos3 = blockPos + Vector3(1, 1, 1)
+						var pos4 = blockPos + Vector3(1, 0, 1)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].sidePos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].sidePos.getUvs():
 							uvs.append(uv)
-					
+
 					# Left side of the cube
 					if blocks[_blocksKey(x - 1, y, z)] == WorldGenerationGlobals.BlockType.AIR:
 						var pos1 = blockPos + Vector3(0, 0, 1)
@@ -102,8 +106,8 @@ func buildMesh():
 						var pos4 = blockPos + Vector3(0, 0, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
-						
-						for uv in WorldGenerationGlobals.blocks[_blocksKey(x, y, z)].sidePos.getUvs():
+
+						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].sidePos.getUvs():
 							uvs.append(uv)
 	
 	# Add all of the verticies, indicies, and uvs to the surface tool
