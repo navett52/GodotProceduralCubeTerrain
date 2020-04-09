@@ -89,8 +89,11 @@ func loadChunks(immediate = false):
 			pooledChunks.append(chunks[chunkPos])
 			chunks.erase(chunkPos)
 		
+#		var tempChunksToGen = chunksToGen.duplicate(true)
+#		thread.start(self, "delayBuildChunks", tempChunksToGen)
+		
 		# Trying to handle logic here so no thread has to handle more than a certain number of chunks
-		if (chunksToGen.size() > 10):
+		if (chunksToGen.size() > 20):
 			var tempChunksToGen = []
 			for i in range(0, chunksToGen.size() - 1):
 				tempChunksToGen.append(chunksToGen.pop_front())
@@ -100,6 +103,7 @@ func loadChunks(immediate = false):
 			chunksToGen.clear()
 
 func buildChunk(posX, posZ):
+	print(str(posX) + "," + str(posZ))
 	var chunk = ChunkClass.new()
 	
 	if pooledChunks.size() > 0:
@@ -124,9 +128,9 @@ func buildChunk(posX, posZ):
 
 func getBlockType(x, y, z):
 	var surfacePass1 = noise.get_noise_2d(x, z) * 10
-	# var surfacePass2 = noise.get_noise_2d(x, z) * 10 * (noise.get_noise_2d(x, z) + .5)
+	var surfacePass2 = noise.get_noise_2d(x, z) * 10 * (noise.get_noise_2d(x, z) + .5)
 	
-	var surfaceMap = surfacePass1 # + surfacePass2
+	var surfaceMap = surfacePass1 + surfacePass2
 	var surfaceHeight = (WorldGenerationGlobals.CHUNK_HEIGHT * .5) + surfaceMap
 	
 	# Add more noise down here eventually for caves, cave masks, stone level, etc.
@@ -141,8 +145,11 @@ func getBlockType(x, y, z):
 
 func delayBuildChunks(chunks):
 	print("Running delayBuildChunks with " + str(chunks.size()) + " chunks.")
-	print(chunks[0])
+	if chunks.size() > 0:
+		print(chunks[0])
+	print(typeof(chunks))
 	while chunks.size() > 0:
 		buildChunk(chunks[0].x, chunks[0].y)
 		chunks.remove(0)
+	print("Outside of loop")
 	emit_signal("finished")
