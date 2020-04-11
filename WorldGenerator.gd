@@ -4,7 +4,7 @@ extends Node
 var ChunkClass = load("res://Chunk.gd")
 var terrainChunk # mayhaps this should really be the MeshInstance object. We'll see.
 var thread
-var lock = Mutex.new()
+var sem = Semaphore.new()
 signal finished
 
 # Get the player; In this case a camera node
@@ -31,22 +31,16 @@ func _ready():
 	world = get_node(".")
 	player = get_node("Camera")
 	noise.seed = genSeed
-	thread = Thread.new()
-	self.connect("finished", self, "wait")
 	loadChunks(true)
 
 func _process(delta):
 	loadChunks()
 
-func wait():
-	print("Waiting for thread.")
-	thread.wait_to_finish()
-
 var currentChunk = Vector2(-1 ,-1)
 func loadChunks(immediate = false):
 	# Get the chunk the player is currently in
-	var currentChunkPosX = floor(player.global_transform.origin.x)
-	var currentChunkPosZ = floor(player.global_transform.origin.z)
+	var currentChunkPosX = floor(player.global_transform.origin.x / WorldGenerationGlobals.CHUNK_WIDTH) * WorldGenerationGlobals.CHUNK_WIDTH
+	var currentChunkPosZ = floor(player.global_transform.origin.z / WorldGenerationGlobals.CHUNK_WIDTH) * WorldGenerationGlobals.CHUNK_WIDTH
 	
 	# Player entered a new chunk
 	# I'm using y here instead of z since I'm using a Vector2 instead of making my own class for chunk position
@@ -64,6 +58,7 @@ func loadChunks(immediate = false):
 				var cp = Vector2(i, j)
 				
 				if !(chunks.has(cp)) && !(chunksToGen.has(cp)):
+					print(str(i) + ", " + str(j))
 					if immediate:
 						buildChunk(i, j)
 					else:
@@ -89,37 +84,29 @@ func loadChunks(immediate = false):
 			pooledChunks.append(chunks[chunkPos])
 			chunks.erase(chunkPos)
 		
-#		var tempChunksToGen = chunksToGen.duplicate(true)
-#		thread.start(self, "delayBuildChunks", tempChunksToGen)
-		
-		# Trying to handle logic here so no thread has to handle more than a certain number of chunks
-		if (chunksToGen.size() > 20):
-			var tempChunksToGen = []
-			for i in range(0, chunksToGen.size() - 1):
-				tempChunksToGen.append(chunksToGen.pop_front())
-				if tempChunksToGen.size() == 10:
-					thread.start(self, "delayBuildChunks", tempChunksToGen)
-					tempChunksToGen.clear()
-			chunksToGen.clear()
+		call_deferred("delayBuildChunks")
+#		yield(self, "finished")
 
 func buildChunk(posX, posZ):
-	print(str(posX) + "," + str(posZ))
 	var chunk = ChunkClass.new()
-	
-	if pooledChunks.size() > 0:
-		chunk = pooledChunks[0]
-		world.add_child(chunk)
-		pooledChunks.erase(chunk)
-		chunk.global_transform.origin = Vector3(posX, 0, posZ)
-	else:
-		world.add_child(chunk)
-		chunk.global_transform.origin = Vector3(posX, 0, posZ)
 	
 	# I believe this is looping through the chunk
 	for x in range(WorldGenerationGlobals.CHUNK_WIDTH + 2):
 		for z in range(WorldGenerationGlobals.CHUNK_WIDTH + 2):
 			for y in range(WorldGenerationGlobals.CHUNK_HEIGHT):
 				chunk.blocks[chunk._blocksKey(x, y, z)] = getBlockType(posX + x - 1, y, posZ + z - 1)
+	
+	world.add_child(chunk)
+	chunk.global_transform.origin = Vector3(posX, 0, posZ)
+	
+#	if pooledChunks.size() > 0:
+#		chunk = pooledChunks[0]
+#		world.add_child(chunk)
+#		pooledChunks.erase(chunk)
+#		chunk.global_transform.origin = Vector3(posX, 0, posZ)
+#	else:
+#		world.add_child(chunk)
+#		chunk.global_transform.origin = Vector3(posX, 0, posZ)
 	
 	# TODO: Generate trees eventually
 	
@@ -143,13 +130,10 @@ func getBlockType(x, y, z):
 	
 	return block
 
-func delayBuildChunks(chunks):
-	print("Running delayBuildChunks with " + str(chunks.size()) + " chunks.")
-	if chunks.size() > 0:
-		print(chunks[0])
-	print(typeof(chunks))
-	while chunks.size() > 0:
-		buildChunk(chunks[0].x, chunks[0].y)
-		chunks.remove(0)
-	print("Outside of loop")
-	emit_signal("finished")
+func delayBuildChunks():
+	while chunksToGen.size() > 0:
+		buildChunk(chunksToGen[0].x, chunksToGen[0].y)
+		chunksToGen.remove(0)
+		
+		yield(get_tree().create_timer(.1), "timeout")
+#		emit_signal("finished")

@@ -26,6 +26,7 @@ func buildMesh():
 	var verts = []
 	var tris = []
 	var uvs = []
+	var normals = []
 	
 	for x in range(1, chunkWidth + 1):
 		for z in range(1, chunkWidth + 1):
@@ -36,13 +37,12 @@ func buildMesh():
 
 					# Create the top face if there is air above the block.
 					if y < chunkHeight - 1 && blocks[_blocksKey(x, y + 1, z)] == WorldGenerationGlobals.BlockType.AIR:
-						var pos1 = blockPos + Vector3(0, 1, 0)
-						var pos2 = blockPos + Vector3(0, 1, 1)
-						var pos3 = blockPos + Vector3(1, 1, 1)
-						var pos4 = blockPos + Vector3(1, 1, 0)
+						var pos1 = blockPos + Vector3(1, 1, 0) # D
+						var pos2 = blockPos + Vector3(1, 1, 1) # C
+						var pos3 = blockPos + Vector3(0, 1, 1) # B
+						var pos4 = blockPos + Vector3(0, 1, 0) # A
 						addQuad(pos1, pos2, pos3, pos4)
-						numFaces += 1
-
+						
 						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].topPos.getUvs():
 							uvs.append(uv)
 
@@ -60,10 +60,10 @@ func buildMesh():
 
 					# Front of the cube
 					if blocks[_blocksKey(x, y, z - 1)] == WorldGenerationGlobals.BlockType.AIR:
-						var pos1 = blockPos + Vector3(0, 0, 0)
-						var pos2 = blockPos + Vector3(0, 1, 0)
-						var pos3 = blockPos + Vector3(1, 1, 0)
-						var pos4 = blockPos + Vector3(1, 0, 0)
+						var pos1 = blockPos + Vector3(1, 0, 0)
+						var pos2 = blockPos + Vector3(1, 1, 0)
+						var pos3 = blockPos + Vector3(0, 1, 0)
+						var pos4 = blockPos + Vector3(0, 0, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
 
@@ -72,22 +72,18 @@ func buildMesh():
 
 					# Right side of the cube
 					if blocks[_blocksKey(x + 1, y, z)] == WorldGenerationGlobals.BlockType.AIR:
-						var pos1 = blockPos + Vector3(1, 0, 0)
-						var pos2 = blockPos + Vector3(1, 1, 0)
-						var pos3 = blockPos + Vector3(1, 1, 1)
-						var pos4 = blockPos + Vector3(1, 0, 1)
+						var pos1 = blockPos + Vector3(1, 0, 1)
+						var pos2 = blockPos + Vector3(1, 1, 1)
+						var pos3 = blockPos + Vector3(1, 1, 0)
+						var pos4 = blockPos + Vector3(1, 0, 0)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
 
 						for uv in WorldGenerationGlobals.blocks[blocks[_blocksKey(x, y, z)]].sidePos.getUvs():
 							uvs.append(uv)
 
-					# Back of the cube
+					# Back of the cube (working)
 					if blocks[_blocksKey(x, y, z + 1)] == WorldGenerationGlobals.BlockType.AIR:
-						# A needs to be 0, 0, 1
-						# B needs to be 0, 1, 1
-						# C needs to be 1, 1, 1
-						# D needs to be 1, 0, 1
 						var pos1 = blockPos + Vector3(0, 0, 1)
 						var pos2 = blockPos + Vector3(0, 1, 1)
 						var pos3 = blockPos + Vector3(1, 1, 1)
@@ -100,10 +96,10 @@ func buildMesh():
 
 					# Left side of the cube
 					if blocks[_blocksKey(x - 1, y, z)] == WorldGenerationGlobals.BlockType.AIR:
-						var pos1 = blockPos + Vector3(0, 0, 1)
-						var pos2 = blockPos + Vector3(0, 1, 1)
-						var pos3 = blockPos + Vector3(0, 1, 0)
-						var pos4 = blockPos + Vector3(0, 0, 0)
+						var pos1 = blockPos + Vector3(0, 0, 0)
+						var pos2 = blockPos + Vector3(0, 1, 0)
+						var pos3 = blockPos + Vector3(0, 1, 1)
+						var pos4 = blockPos + Vector3(0, 0, 1)
 						addQuad(pos1, pos2, pos3, pos4)
 						numFaces += 1
 

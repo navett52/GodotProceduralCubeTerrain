@@ -9,13 +9,13 @@
 script = ExtResource( 1 )
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.25358, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 40.1802, 0 )
 script = ExtResource( 2 )
 max_speed = Vector3( 10, 10, 10 )
 
 [node name="OmniLight" type="OmniLight" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 24.4935, 0 )
-omni_range = 68.0169
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 68.2412, 0 )
+omni_range = 151.874
 
 [node name="Target" type="Spatial" parent="."]
 
